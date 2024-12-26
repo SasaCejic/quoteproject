@@ -1,0 +1,16 @@
+<template>
+    <lightning-card title="Related Quotes" icon-name="standard:quote">
+        <template if:true={quotes}>
+            <lightning-datatable
+                key-field="Id"
+                data={quotes}
+                columns={columns}
+                hide-checkbox-column="true"
+                max-row-selection="0"
+            ></lightning-datatable>
+        </template>
+        <template if:true={error}>
+            <p>Error: {error}</p>
+        </template>
+    </lightning-card>
+</template>

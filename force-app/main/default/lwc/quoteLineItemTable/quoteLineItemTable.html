@@ -1,0 +1,32 @@
+<template>
+    <template if:true={hasItems}>
+        <lightning-card title="Quote Line Items">
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                <thead>
+                    <tr>
+                        <th>Consultant Seniority</th>
+                        <th>Price Entry</th>
+                        <th>PT</th>
+                        <th>Beschreibung</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={quoteLineItems} for:item="lineItem">
+                        <tr key={lineItem.id}>
+                            <td>{lineItem.rowNumber}</td>
+                            <td>{lineItem.unitPrice}</td>
+                            <td>{lineItem.quantity}</td>
+                            <td>{lineItem.beschreibung}</td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </lightning-card>
+    </template>
+    
+    <template if:false={hasItems}>
+        <lightning-card title="Quote Line Items">
+            <p>No Quote Line Items found</p>
+        </lightning-card>
+    </template>
+</template>

@@ -1,0 +1,27 @@
+<template>
+    <lightning-card title="Add Products" icon-name="utility:add">
+        <lightning-button
+            label="Add Products"
+            variant="brand"
+            onclick={handleLaunchFlow}
+        ></lightning-button>
+
+        <template if:true={isFlowVisible}>
+            <lightning-flow
+                flow-api-name="Add_Products_Screen_Flow"
+                flow-input-variables={inputVariables}
+                onstatuschange={handleStatusChange}
+            ></lightning-flow>
+        </template>
+    </lightning-card>
+
+    <!-- Related List for QuoteLineItem -->
+    <lightning-card title="Quote Line Items" icon-name="utility:list">
+        <lightning-datatable
+            key-field="Id"
+            data={quoteLineItems}
+            columns={columns}
+            hide-checkbox-column
+        ></lightning-datatable>
+    </lightning-card>
+</template>
