@@ -17,11 +17,16 @@
 
     <!-- Related List for QuoteLineItem -->
     <lightning-card title="Quote Line Items" icon-name="utility:list">
-        <lightning-datatable
-            key-field="Id"
-            data={quoteLineItems}
-            columns={columns}
-            hide-checkbox-column
-        ></lightning-datatable>
+        <template if:true={showTable}>
+            <lightning-datatable
+                key-field="Id"
+                data={quoteLineItems}
+                columns={columns}
+                hide-checkbox-column
+                inline-edit-enabled
+                oncellchange={handleCellChange}
+                onrowaction={handleRowAction}
+            ></lightning-datatable>
+        </template>
     </lightning-card>
 </template>

@@ -1,12 +1,14 @@
 import { LightningElement, api, wire } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { getRelatedListRecords } from 'lightning/uiRelatedListApi';
+import { updateRecord, deleteRecord } from 'lightning/uiRecordApi';
 import { refreshApex } from '@salesforce/apex';
 
 export default class AddProductsLWC extends LightningElement {
     @api recordId;
     isFlowVisible = false;
     quoteLineItems = [];
+    showTable = false;
     wiredQuoteLineItems;
 
     // Prepare the input variable for the Flow
@@ -15,21 +17,37 @@ export default class AddProductsLWC extends LightningElement {
             {
                 name: 'recordId',
                 type: 'String',
-                value: this.recordId
-            }
+                value: this.recordId,
+            },
         ];
     }
 
     columns = [
-        { label: 'Product Name', fieldName: 'Product_Name__c', type: 'text' },
-        { label: 'Unit Price', fieldName: 'UnitPrice', type: 'currency' },
-        { label: 'Quantity', fieldName: 'Quantity', type: 'number' },
-        { label: 'Description', fieldName: 'Beschreibung__c', type: 'text' },
-        { label: 'Cost Rate Per Hour', fieldName: 'Cost_Rate_Per_Hour__c', type: 'currency' },
-        { label: 'Total Sales Price', fieldName: 'Total_Sales_Price__c', type: 'currency' },
-        { label: 'Costs', fieldName: 'Costs__c', type: 'currency' },
-        { label: 'Margin', fieldName: 'Margin__c', type: 'percent' },
+        {
+            label: 'Product Name',
+            fieldName: 'ProductLink', // New field for URL
+            type: 'url',
+            typeAttributes: { label: { fieldName: 'Product_Name__c' }, target: '_blank' },
+        },
+        { label: 'Unit Price', fieldName: 'UnitPrice', type: 'currency', editable: true },
+        { label: 'Quantity', fieldName: 'Quantity', type: 'number', editable: true },
+        { label: 'Description', fieldName: 'Beschreibung__c', type: 'text', editable: true },
+        { label: 'Cost Rate Per Hour', fieldName: 'Cost_Rate_Per_Hour__c', type: 'currency', editable: true },
+        { label: 'Total Sales Price', fieldName: 'Total_Sales_Price__c', type: 'currency', editable: false },
+        { label: 'Costs', fieldName: 'Costs__c', type: 'currency', editable: false },
+        { label: 'Margin', fieldName: 'Margin__c', type: 'percent', editable: false },
+        {
+            type: 'action',
+            typeAttributes: { rowActions: this.getRowActions },
+        },
     ];
+
+    getRowActions(row, doneCallback) {
+        const actions = [
+            { label: 'Delete', name: 'delete' },
+        ];
+        doneCallback(actions);
+    }
 
     @wire(getRelatedListRecords, {
         parentRecordId: '$recordId',
@@ -46,13 +64,14 @@ export default class AddProductsLWC extends LightningElement {
         ],
     })
     wiredRecords(result) {
-        this.wiredQuoteLineItems = result; // Store the result for refreshApex
+        this.wiredQuoteLineItems = result;
         if (result.data) {
             this.quoteLineItems = result.data.records.map(record => {
                 const fields = record.fields;
                 return {
                     Id: record.id,
                     Product_Name__c: fields.Product_Name__c?.value || '',
+                    ProductLink: `/lightning/r/QuoteLineItem/${record.id}/view`, // URL to the record page
                     UnitPrice: fields.UnitPrice?.value || 0,
                     Quantity: fields.Quantity?.value || 0,
                     Beschreibung__c: fields.Beschreibung__c?.value || '',
@@ -62,6 +81,9 @@ export default class AddProductsLWC extends LightningElement {
                     Margin__c: fields.Margin__c?.value ? fields.Margin__c.value / 100 : 0,
                 };
             });
+            if (this.quoteLineItems.length > 0) {
+                this.showTable = true;
+            }
         } else if (result.error) {
             this.showErrorToast('Error fetching related records', result.error.body.message);
         }
@@ -88,6 +110,38 @@ export default class AddProductsLWC extends LightningElement {
                     this.showErrorToast('Error refreshing related list', error.body.message);
                 });
         }
+    }
+
+    handleCellChange(event) {
+        const updatedFields = event.detail.draftValues[0];
+        updateRecord({ fields: updatedFields })
+            .then(() => {
+                this.showSuccessToast('Record updated successfully!');
+                return refreshApex(this.wiredQuoteLineItems);
+            })
+            .catch(error => {
+                this.showErrorToast('Error updating record', error.body.message);
+            });
+    }
+
+    handleRowAction(event) {
+        const actionName = event.detail.action.name;
+        const row = event.detail.row;
+        if (actionName === 'delete') {
+            this.deleteRow(row.Id);
+        }
+    }
+
+    deleteRow(recordId) {
+        deleteRecord(recordId)
+            .then(() => {
+                this.showSuccessToast('Record deleted successfully!');
+                this.showTable = false;
+                return refreshApex(this.wiredQuoteLineItems);
+            })
+            .catch(error => {
+                this.showErrorToast('Error deleting record', error.body.message);
+            });
     }
 
     showSuccessToast(message) {
