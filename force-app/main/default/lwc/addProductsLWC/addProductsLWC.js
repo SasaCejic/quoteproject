@@ -136,7 +136,9 @@ export default class AddProductsLWC extends LightningElement {
         deleteRecord(recordId)
             .then(() => {
                 this.showSuccessToast('Record deleted successfully!');
-                this.showTable = false;
+                if (this.quoteLineItems.length == 0) {
+                    this.showTable = false;
+                }
                 return refreshApex(this.wiredQuoteLineItems);
             })
             .catch(error => {
